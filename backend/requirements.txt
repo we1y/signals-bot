@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+nest-asyncio
+python-dotenv
+pytz
+tzlocal
+python-telegram-bot

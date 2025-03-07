@@ -1,0 +1,80 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    environment:
+      BACKEND_HOST: backend
+      SECRET_KEY: 8f3b0d45cb72a9c45df06a7c9d4858c6d0e1e6eb7a7bfa72a07a9350fd5db2b062
+      TELEGRAM_BOT_TOKEN: 7764689777:AAG4tm_v4EfXGr1rNA451cjzDEORemr_w_E
+      PROFIT_PERCENTAGE: 1.01
+      BURN_CHANCE: 0.1
+      JOIN_DURATION: 1
+      PROCESSING_DURATION: 1
+      JOIN_TIME: 300
+      ACTIVE_TIME: 1800
+      API_KEY: your_nowpayments_api_key
+      DATABASE_URL: postgresql+asyncpg://signalis_user:1234@host.docker.internal:5432/signalis_db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      REACT_APP_API_URL: http://backend:8000
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: signalis_db
+      MB_DB_PORT: 5432
+      MB_DB_USER: signalis_user
+      MB_DB_PASS: 1234
+      MB_DB_HOST: host.docker.internal
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: signalis_user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: signalis_db
+    networks:
+      - app-network
+    ports:
+      - "5432:5432"
+
+networks:
+  app-network:
+    driver: bridge
